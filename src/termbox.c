@@ -939,20 +939,30 @@ int tb_init_fd(int ttyfd) {
 
 int tb_init_rwfd(int rfd, int wfd) {
     int rv;
+    const char *term;
 
     tb_reset();
     global.ttyfd = rfd == wfd && isatty(rfd) ? rfd : -1;
     global.rfd = rfd;
     global.wfd = wfd;
 
+	term = getenv("TERM");
+	if (!term) {
+		term = "xterm";
+		setenv("TERM", term, 0);
+	}
+
+	if (strcmp("st-256color", term) == 0) {
+		setenv("TERM", "screen-256color", 1);
+	} else if (strcmp("st", term) == 0) {
+		setenv("TERM", "screen", 1);
+	}
+
     do {
 retry:
         if_err_break(rv, init_term_attrs());
         if_err_break(rv, init_term_caps());
-	if (init_cap_trie() != TB_OK && strcmp(getenv("TERM"), "xterm")) {
-		setenv("TERM", "xterm", 1);
-		goto retry;
-	}
+        if_err_break(rv, init_cap_trie());
         if_err_break(rv, init_resize_handler());
         if_err_break(rv, send_init_escape_codes());
         if_err_break(rv, send_clear());
@@ -962,6 +972,10 @@ retry:
     } while (0);
 
     if (rv != TB_OK) {
+	if (strcmp(term, "xterm")) {
+		setenv("TERM", "xterm", 1);
+		goto retry;
+	}
         tb_deinit();
     }
 
