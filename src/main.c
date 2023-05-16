@@ -30,7 +30,7 @@ struct symbol {
 struct symbol *symbols = NULL;
 
 const char query[] =
-		"https://query1.finance.yahoo.com/v7/finance/"
+		"https://query1.finance.yahoo.com/v6/finance/"
 		"quote?lang=en-US&region=US&corsDomain=finance.yahoo.com&"
 		"fields=regularMarketChange,regularMarketPrice,shortName&"
 		"symbols=%s";
