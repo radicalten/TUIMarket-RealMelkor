@@ -22,20 +22,14 @@
 struct symbol {
 	char symbol[16];
 	char name[256];
-	char state[128];
 	float price;
 	float previous_price;
 	struct symbol *next;
 };
 struct symbol *symbols = NULL;
 
-const char query[] =
-		"https://query1.finance.yahoo.com/v6/finance/"
-		"quote?lang=en-US&region=US&corsDomain=finance.yahoo.com&"
-		"fields=regularMarketChange,regularMarketPrice,shortName&"
-		"symbols=%s";
-
-char *url = NULL;
+const char query_price[] =
+	"https://query2.finance.yahoo.com/v7/finance/options/%s";
 
 const char *paths[] = {
 	".config/tuimarket/symbols",
@@ -149,7 +143,7 @@ static int load_symbols() {
 
 		if (s.symbol[len - 1] == '\n') s.symbol[len - 1] = '\0';
 
-		new = malloc(sizeof(struct symbol));
+		new = calloc(1, sizeof(struct symbol));
 		if (!new) return -1;
 
 		*new = s;
@@ -163,7 +157,6 @@ static int load_symbols() {
 
 const char str_price[] = "\"regularMarketPrice\":";
 const char str_old_price[] = "\"regularMarketPreviousClose\":";
-const char str_state[] = "\"marketState\":\"";
 const char str_name[] = "\"shortName\":\"";
 
 static int find_copy(const char *haystack, const char *needle,
@@ -186,90 +179,33 @@ static int find_copy(const char *haystack, const char *needle,
 	return 0;
 }
 
-static char* make_url() {
+static int update_symbol(struct symbol *symbol) {
 
-	size_t len, i;
-	struct symbol *symbol;
-	char *list, *data;
-
-	len = 0;
-	symbol = symbols;
-	while (symbol) {
-		len += strnlen(symbol->symbol, sizeof(symbol->symbol)) + 1;
-		symbol = symbol->next;
-	}
-	len++;
-
-	list = malloc(len);
-	if (!list) {
-		printf("not enough memory\n");
-		return NULL;
-	}
-
-	i = 0;
-	symbol = symbols;
-	while (symbol) {
-		i += strlcpy(&list[i], symbol->symbol, len - i);
-		list[i++] = ',';
-		symbol = symbol->next;
-	}
-	list[i - 1] = '\0';
-
-	len += sizeof(query);
-	data = malloc(len);
-	snprintf(data, len, query, list);
-
-	free(list);
-
-	return data;
-}
-
-static int update_symbols() {
-
-	struct symbol *symbol;
-	char buf[64], *start, *end, *data;
+	char url[2048], buf[64], *data;
 	size_t len;
 	int ret = -1;
 
+	snprintf(url, sizeof(url), query_price, symbol->symbol);
 	data = handle_url(url, &len);
 	if (!data) return -1;
 
-	symbol = symbols;
-	start = data;
-	end = start + len - 1;
-	*end = 0;
-next:
 	if (find_copy(data, str_price, sizeof(str_price), ',', buf,
-				sizeof(buf)))
+			sizeof(buf)))
 		goto clean;
 	symbol->price = atof(buf);
 	
 	if (find_copy(data, str_old_price, sizeof(str_old_price), ',', buf,
-				sizeof(buf)))
+			sizeof(buf)))
 		goto clean;
 	symbol->previous_price = atof(buf);
 
-	if (find_copy(data, str_state, sizeof(str_state), '"', symbol->state,
-				sizeof(symbol->state)))
+	if (find_copy(data, str_name, sizeof(str_name), '"',
+			symbol->name, sizeof(symbol->name)))
 		goto clean;
-
-	if (find_copy(data, str_name, sizeof(str_name), '"', symbol->name,
-				sizeof(symbol->name)))
-		goto clean;
-
-	data = strstr(data, str_price);
-	while (data && *data && data < end) {
-		if (*data == '{') {
-			if (!strstr(data, str_price)) break;
-			symbol = symbol->next;
-			goto next;
-		}
-		data++;
-	}
 
 	ret = 0;
 clean:
-	free(start);
+	free(data);
 
 	return ret;
 }
@@ -277,7 +213,9 @@ clean:
 void *update_thread(void *ptr) {
 	int *run = ptr, counter;
 	while (*run) {
-		update_symbols();
+		struct symbol *symbol;
+		for (symbol = symbols; symbol; symbol = symbol->next)
+			update_symbol(symbol);
 		counter = 0;
 		while (counter++ < INTERVAL && *run)
 			sleep(1);
@@ -301,9 +239,6 @@ int main(int argc, char *argv[]) {
 		printf("cannot find symbols file\n");
 		return -1;
 	}
-
-	url = make_url();
-	if (!url) return -1;
 
 	curl_global_init(CURL_GLOBAL_ALL);
 
@@ -386,7 +321,6 @@ int main(int argc, char *argv[]) {
 	run = 0;
 	tb_shutdown();
 	curl_global_cleanup();
-	free(url);
 	while (symbols) {
 		struct symbol *s = symbols;
 		symbols = symbols->next;
