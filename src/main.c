@@ -11,6 +11,7 @@
 #include <curl/curl.h>
 #include "termbox.h" 
 #include "strlcpy.h" 
+#include "strnstr.h"
 
 #ifndef PATH_MAX
 #define PATH_MAX 1024
@@ -159,12 +160,12 @@ const char str_price[] = "\"regularMarketPrice\":";
 const char str_old_price[] = "\"regularMarketPreviousClose\":";
 const char str_name[] = "\"shortName\":\"";
 
-static int find_copy(const char *haystack, const char *needle,
+static int find_copy(const char *haystack, const char *needle, size_t hay_len,
 			size_t needle_len, char stop, char *buf, size_t len) {
 
 	char *start, *end;
 
-	start = strstr(haystack, needle);
+	start = strnstr(haystack, needle, hay_len);
 	if (!start) return -1;
 
 	start += needle_len - 1;
@@ -189,17 +190,17 @@ static int update_symbol(struct symbol *symbol) {
 	data = handle_url(url, &len);
 	if (!data) return -1;
 
-	if (find_copy(data, str_price, sizeof(str_price), ',', buf,
+	if (find_copy(data, str_price, len, sizeof(str_price), ',', buf,
 			sizeof(buf)))
 		goto clean;
 	symbol->price = atof(buf);
 	
-	if (find_copy(data, str_old_price, sizeof(str_old_price), ',', buf,
+	if (find_copy(data, str_old_price, len, sizeof(str_old_price), ',', buf,
 			sizeof(buf)))
 		goto clean;
 	symbol->previous_price = atof(buf);
 
-	if (find_copy(data, str_name, sizeof(str_name), '"',
+	if (find_copy(data, str_name, len, sizeof(str_name), '"',
 			symbol->name, sizeof(symbol->name)))
 		goto clean;
 
