@@ -211,6 +211,13 @@ clean:
 	return ret;
 }
 
+void ansi_sleep(long micro) {
+        struct timeval tv;
+        tv.tv_sec = micro / 1000000;
+        tv.tv_usec = micro % 1000000;
+        select(0, NULL, NULL, NULL, &tv);
+}
+
 void *update_thread(void *ptr) {
 	int *run = ptr, counter;
 	while (*run) {
@@ -218,8 +225,8 @@ void *update_thread(void *ptr) {
 		for (symbol = symbols; symbol; symbol = symbol->next)
 			update_symbol(symbol);
 		counter = 0;
-		while (counter++ < INTERVAL && *run)
-			sleep(1);
+		while (counter++ < INTERVAL * 10 && *run)
+			ansi_sleep(100000);
 	}
 	return ptr;
 }
@@ -321,6 +328,7 @@ int main(int argc, char *argv[]) {
 
 	run = 0;
 	tb_shutdown();
+	pthread_join(thread, NULL);
 	curl_global_cleanup();
 	while (symbols) {
 		struct symbol *s = symbols;
