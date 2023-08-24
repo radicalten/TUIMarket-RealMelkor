@@ -1,6 +1,6 @@
 # TUIMarket
 
-Fetch informations about stocks, currencies, cryptocurrencies in your terminal.
+Fetch informations about stocks, currencies and cryptocurrencies in your terminal.
 The program uses Yahoo Finance api.
 
 ![pic0](./img/img.png)
@@ -8,6 +8,7 @@ The program uses Yahoo Finance api.
 ## Configuration
 
 The program will loads a list of symbols from one of those files :
+
 * ~/.config/tuimarket/symbols
 * ~/.tuimarket/symbols
 * ~/.tuimarket_symbols
