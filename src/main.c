@@ -219,14 +219,23 @@ void ansi_sleep(long micro) {
 }
 
 void *update_thread(void *ptr) {
-	int *run = ptr, counter;
+	int *run = ptr, interval, counter;
+	size_t length;
+	struct symbol *symbol;
+
+	length = 0;
+	for (symbol = symbols; symbol; symbol = symbol->next) length++;
+
+	interval = 0;
 	while (*run) {
-		struct symbol *symbol;
-		for (symbol = symbols; symbol; symbol = symbol->next)
+		for (symbol = symbols; symbol; symbol = symbol->next) {
 			update_symbol(symbol);
-		counter = 0;
-		while (counter++ < INTERVAL * 10 && *run)
-			ansi_sleep(100000);
+			counter = 0;
+			while (counter++ < interval * 10 && *run)
+				ansi_sleep(100000 / length);
+			if (!*run) break;
+		}
+		interval = INTERVAL;
 	}
 	return ptr;
 }
