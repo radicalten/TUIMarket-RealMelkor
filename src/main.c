@@ -20,14 +20,16 @@
 
 #define INTERVAL 5 /* update informations every x seconds */
 
+const char alloc_fail[] = "memory allocation failure\n";
+
 struct symbol {
 	char symbol[16];
 	char name[256];
 	float price;
 	float previous_price;
-	struct symbol *next;
 };
 struct symbol *symbols = NULL;
+size_t symbols_length = 0;
 
 const char query_price[] =
 	"https://query2.finance.yahoo.com/v7/finance/options/%s";
@@ -51,7 +53,7 @@ static size_t writecb(void *contents, size_t size, size_t nmemb, void *userp) {
 
 	mem->memory = realloc(mem->memory, mem->size + realsize + 1);
 	if(mem->memory == NULL) {
-		printf("not enough memory\n");
+		printf(alloc_fail);
 		return 0;
 	}
 
@@ -67,6 +69,10 @@ char *handle_url(char *url, size_t *len) {
 	CURLcode res;
 
 	chunk.memory = malloc(1);
+	if (!chunk.memory) {
+		printf(alloc_fail);
+		return NULL;
+	}
 	chunk.size = 0;
 
 	curl_handle = curl_easy_init();
@@ -124,17 +130,16 @@ static int load_symbols() {
 	len = get_home(home, sizeof(home));
 	if (len == -1) return -1;
 
-	i = 0;
-	while (i < SIZEOF(paths)) {
-		snprintf(path, sizeof(path), "%s/%s", home, paths[i++]);
+	for (i = 0; i < SIZEOF(paths); i++) {
+		snprintf(path, sizeof(path), "%s/%s", home, paths[i]);
 		f = fopen(path, "r");
 		if (f) break;
 	}
 	if (!f) return -1;
 
-	while (1) {
+	for (i = 0; 1; i++) {
 
-		struct symbol s = {0}, *new;
+		struct symbol s = {0};
 		size_t len;
 
 		if (!fgets(s.symbol, sizeof(s.symbol), f)) break;
@@ -144,13 +149,14 @@ static int load_symbols() {
 
 		if (s.symbol[len - 1] == '\n') s.symbol[len - 1] = '\0';
 
-		new = calloc(1, sizeof(struct symbol));
-		if (!new) return -1;
-
-		*new = s;
-		new->next = symbols;
-		symbols = new;
+		symbols = realloc(symbols, (i + 1) * sizeof(struct symbol));
+		if (!symbols) {
+			printf(alloc_fail);
+			return -1;
+		}
+		symbols[i] = s;
 	}
+	symbols_length = i;
 	fclose(f);
 
 	return 0;
@@ -219,20 +225,17 @@ void ansi_sleep(long micro) {
 }
 
 void *update_thread(void *ptr) {
-	int *run = ptr, interval, counter;
-	size_t length;
-	struct symbol *symbol;
 
-	length = 0;
-	for (symbol = symbols; symbol; symbol = symbol->next) length++;
+	int *run = ptr, interval, counter;
 
 	interval = 0;
 	while (*run) {
-		for (symbol = symbols; symbol; symbol = symbol->next) {
-			update_symbol(symbol);
+		size_t i;
+		for (i = 0; i < symbols_length; i++) {
+			update_symbol(&symbols[i]);
 			counter = 0;
 			while (counter++ < interval * 10 && *run)
-				ansi_sleep(100000 / length);
+				ansi_sleep(100000 / symbols_length);
 			if (!*run) break;
 		}
 		interval = INTERVAL;
@@ -270,7 +273,7 @@ int main(int argc, char *argv[]) {
 	while (1) {
 
 		struct tb_event ev;
-		struct symbol *symbol;
+		struct symbol symbol;
 		int i, w, h, bottom;
 
 		w = tb_width();
@@ -286,41 +289,34 @@ int main(int argc, char *argv[]) {
 		tb_print(w + COL_VARIATION - 2, 0,
 				TB_BLACK, TB_WHITE, "| Variation");
 		
-		i = 1;
-		symbol = symbols;
+		i = scroll;
 		bottom = 1;
-		while (symbol) {
+		for (i = scroll + 1; i < (int)symbols_length + 1; i++) {
 			int gain, j;
-			if (scroll >= i) {
-				symbol = symbol->next;
-				i++;
-				continue;
-			}
-			gain = (symbol->price >= symbol->previous_price);
+			symbol = symbols[i - 1];
+			gain = (symbol.price >= symbol.previous_price);
 			tb_print(COL_SYMBOL, i - scroll,
 					TB_DEFAULT, TB_DEFAULT,
-					symbol->symbol);
+					symbol.symbol);
 			tb_print(COL_NAME, i - scroll, TB_DEFAULT, TB_DEFAULT,
-					symbol->name);
+					symbol.name);
 
 			j = w + COL_PRICE - 2;
 			while (j++ < w)
 				tb_set_cell(j, i, ' ', TB_DEFAULT, TB_DEFAULT);
 			tb_printf(w + COL_PRICE, i - scroll,
 					TB_DEFAULT, TB_DEFAULT,
-					"%.2f", symbol->price);
+					"%.2f", symbol.price);
 			tb_printf(w + COL_VARIATION + gain, i - scroll,
 					gain ? TB_GREEN : TB_RED,
 					TB_DEFAULT, "%.2f (%.2f%%)",
-					symbol->price - symbol->previous_price,
-					symbol->price / symbol->previous_price
+					symbol.price - symbol.previous_price,
+					symbol.price / symbol.previous_price
 					* 100 - 100);
-			symbol = symbol->next;
-			if (i - scroll > h) {
+			if (i - scroll >= h) {
 				bottom = 0;
 				break;
 			}
-			i++;
 		}
 
 		tb_present();
@@ -339,11 +335,7 @@ int main(int argc, char *argv[]) {
 	tb_shutdown();
 	pthread_join(thread, NULL);
 	curl_global_cleanup();
-	while (symbols) {
-		struct symbol *s = symbols;
-		symbols = symbols->next;
-		free(s);
-	}
+	free(symbols);
 
 	return 0;
 }
