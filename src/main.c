@@ -19,6 +19,7 @@
 #define SIZEOF(X) sizeof(X) / sizeof(*X)
 
 #define INTERVAL 5 /* update informations every x seconds */
+#define REFRESH 1000 /* refresh screen every x milliseconds */
 
 const char alloc_fail[] = "memory allocation failure\n";
 
@@ -248,6 +249,62 @@ void *update_thread(void *ptr) {
 #define COL_VARIATION (-(signed)sizeof("Variation") - 8)
 #define COL_PRICE (COL_VARIATION -(signed)sizeof("| Price") - 3)
 
+int display(int *scroll) {
+
+	struct tb_event ev;
+	struct symbol symbol;
+	int i, w, h, bottom;
+
+	w = tb_width();
+	h = tb_height();
+
+	if ((size_t)h > symbols_length) *scroll = 0;
+
+	tb_clear();
+	for (i = 0; i < w; i++) tb_set_cell(i, 0, ' ', TB_BLACK, TB_WHITE);
+
+	tb_print(COL_SYMBOL - 2, 0, TB_BLACK, TB_WHITE, " Symbol");
+	tb_print(COL_NAME - 2, 0, TB_BLACK, TB_WHITE, "| Name");
+	tb_print(w + COL_PRICE - 2, 0, TB_BLACK, TB_WHITE, "| Price");
+	tb_print(w + COL_VARIATION - 2, 0, TB_BLACK, TB_WHITE, "| Variation");
+
+	bottom = 1;
+	for (i = *scroll; i < (int)symbols_length; i++) {
+		int gain, j, y = i + 1;
+		symbol = symbols[i];
+		gain = (symbol.price >= symbol.previous_price);
+		tb_print(COL_SYMBOL, y - *scroll, TB_DEFAULT, TB_DEFAULT,
+				symbol.symbol);
+		tb_print(COL_NAME, y - *scroll, TB_DEFAULT, TB_DEFAULT,
+				symbol.name);
+
+		j = w + COL_PRICE - 2;
+		while (j++ < w)
+			tb_set_cell(j, y, ' ', TB_DEFAULT, TB_DEFAULT);
+		tb_printf(w + COL_PRICE, y - *scroll, TB_DEFAULT, TB_DEFAULT,
+				"%.2f", symbol.price);
+		tb_printf(w + COL_VARIATION + gain, y - *scroll,
+			gain ? TB_GREEN : TB_RED, TB_DEFAULT, "%.2f (%.2f%%)",
+			symbol.price - symbol.previous_price,
+			symbol.price / symbol.previous_price * 100 - 100);
+		if (y - *scroll >= h) {
+			bottom = 0;
+			break;
+		}
+	}
+
+	tb_present();
+
+	if (!tb_peek_event(&ev, REFRESH)) {
+		if (ev.key == TB_KEY_ESC || ev.ch == 'q') return -1;
+		if ((ev.key == TB_KEY_ARROW_DOWN || ev.ch == 'j') && !bottom)
+			(*scroll)++;
+		if ((ev.key == TB_KEY_ARROW_UP || ev.ch == 'k') && *scroll)
+			(*scroll)--;
+	}
+	return 0;
+}
+
 int main(int argc, char *argv[]) {
 
 	int scroll = 0, run;
@@ -270,66 +327,7 @@ int main(int argc, char *argv[]) {
 	run = 1;
 	pthread_create(&thread, NULL, update_thread, &run);
 
-	while (1) {
-
-		struct tb_event ev;
-		struct symbol symbol;
-		int i, w, h, bottom;
-
-		w = tb_width();
-		h = tb_height();
-
-		tb_clear();
-		i = 0;
-		while (i++ < w) tb_set_cell(i, 0, ' ', TB_BLACK, TB_WHITE);
-
-		tb_print(COL_SYMBOL - 2, 0, TB_BLACK, TB_WHITE, " Symbol");
-		tb_print(COL_NAME - 2, 0, TB_BLACK, TB_WHITE, "| Name");
-		tb_print(w + COL_PRICE - 2, 0, TB_BLACK, TB_WHITE, "| Price");
-		tb_print(w + COL_VARIATION - 2, 0,
-				TB_BLACK, TB_WHITE, "| Variation");
-		
-		i = scroll;
-		bottom = 1;
-		for (i = scroll + 1; i < (int)symbols_length + 1; i++) {
-			int gain, j;
-			symbol = symbols[i - 1];
-			gain = (symbol.price >= symbol.previous_price);
-			tb_print(COL_SYMBOL, i - scroll,
-					TB_DEFAULT, TB_DEFAULT,
-					symbol.symbol);
-			tb_print(COL_NAME, i - scroll, TB_DEFAULT, TB_DEFAULT,
-					symbol.name);
-
-			j = w + COL_PRICE - 2;
-			while (j++ < w)
-				tb_set_cell(j, i, ' ', TB_DEFAULT, TB_DEFAULT);
-			tb_printf(w + COL_PRICE, i - scroll,
-					TB_DEFAULT, TB_DEFAULT,
-					"%.2f", symbol.price);
-			tb_printf(w + COL_VARIATION + gain, i - scroll,
-					gain ? TB_GREEN : TB_RED,
-					TB_DEFAULT, "%.2f (%.2f%%)",
-					symbol.price - symbol.previous_price,
-					symbol.price / symbol.previous_price
-					* 100 - 100);
-			if (i - scroll >= h) {
-				bottom = 0;
-				break;
-			}
-		}
-
-		tb_present();
-
-		if (!tb_peek_event(&ev, 1000)) {
-			if (ev.key == TB_KEY_ESC || ev.ch == 'q') break;
-			if ((ev.key == TB_KEY_ARROW_DOWN || ev.ch == 'j') &&
-				!bottom) scroll++;
-			if ((ev.key == TB_KEY_ARROW_UP || ev.ch == 'k') &&
-				scroll) scroll--;
-		}
-
-	}
+	while (!display(&scroll)) ;
 
 	run = 0;
 	tb_shutdown();
