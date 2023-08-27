@@ -12,14 +12,12 @@
 #include "termbox.h" 
 #include "strlcpy.h" 
 #include "strnstr.h"
+#include "config.h"
 
 #ifndef PATH_MAX
 #define PATH_MAX 1024
 #endif
 #define SIZEOF(X) sizeof(X) / sizeof(*X)
-
-#define INTERVAL 5 /* update informations every x seconds */
-#define REFRESH 1000 /* refresh screen every x milliseconds */
 
 const char alloc_fail[] = "memory allocation failure\n";
 
