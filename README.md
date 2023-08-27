@@ -23,5 +23,8 @@ The file will be read one symbol per line.
 
 ## Dependencies
 
-* libcurl
-* termbox2 (included in the source)
+* [libcurl][0] - the multiprotocol file transfer library
+* [termbox2][1] - terminal rendering library (included in the source)
+
+[0]: https://curl.se/libcurl/
+[1]: https://github.com/termbox/termbox2
