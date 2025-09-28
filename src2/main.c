@@ -120,19 +120,15 @@ static int load_symbols() {
 
 	FILE *f = NULL;
 	size_t i;
-	ssize_t len;
-	char home[PATH_MAX], path[PATH_MAX];
 
-	len = get_home(home, sizeof(home));
-	if (len == -1) return -1;
-
-	for (i = 0; i < SIZEOF(paths); i++) {
-		snprintf(path, sizeof(path), "%s/%s", home, paths[i]);
-		f = fopen(path, "r");
-		if (f) break;
-	}
+	// Attempt to open the "symbols" file in the current directory.
+	f = fopen("symbols", "r");
+	
+	// If the file doesn't exist or can't be opened, return an error.
 	if (!f) return -1;
 
+	// The rest of the function, which reads the file line by line,
+	// remains exactly the same.
 	for (i = 0; 1; i++) {
 
 		struct symbol s = {0};
