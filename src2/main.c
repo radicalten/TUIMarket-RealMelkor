@@ -273,6 +273,10 @@ int main(int argc, char *argv[]) {
 	int scroll = 0, run;
 	pthread_t thread;
 
+	if (argc > 1) {
+    paths[0] = argv[1];
+}
+
 	if (!argc) return sizeof(*argv);
 
 	if (load_symbols()) {
