@@ -9,7 +9,7 @@
 #include <pthread.h>
 #include <errno.h>
 #include <curl/curl.h>
-#include "termbox2.h"
+#include "termbox.h"
 #define INTERVAL 30 /* update stock ticker every x seconds */
 #define REFRESH 1000 /* refresh screen every x milliseconds */
 
