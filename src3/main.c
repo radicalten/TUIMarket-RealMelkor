@@ -259,14 +259,14 @@ int display(int *scroll) {
 
 	tb_present();
 
-	if (!tb_peek_event(&ev, REFRESH)) {
-		if (ev.key == TB_KEY_ESC || ev.ch == 'q') return -1;
-		if ((ev.key == TB_KEY_ARROW_DOWN || ev.ch == 'j') && !bottom)
-			(*scroll)++;
-		if ((ev.key == TB_KEY_ARROW_UP || ev.ch == 'k') && *scroll)
-			(*scroll)--;
-	}
-	return 0;
+	if (tb_peek_event(&ev, REFRESH) > 0) {
+    if (ev.type == TB_EVENT_KEY) {
+        if (ev.key == TB_KEY_ESC || ev.ch == 'q') return -1;
+        if ((ev.key == TB_KEY_ARROW_DOWN || ev.ch == 'j') && !bottom)
+            (*scroll)++;
+        if ((ev.key == TB_KEY_ARROW_UP || ev.ch == 'k') && *scroll)
+            (*scroll)--;
+    }
 }
 
 int main(int argc, char *argv[]) {
