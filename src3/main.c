@@ -9,9 +9,8 @@
 #include <pthread.h>
 #include <errno.h>
 #include <curl/curl.h>
-#include "termbox2.h" // updated to termbox2.h 
-// #include "strnstr.h" REMOVED
-#include "config.h"
+#include "termbox2.h" 
+
 
 #ifndef PATH_MAX
 #define PATH_MAX 1024
