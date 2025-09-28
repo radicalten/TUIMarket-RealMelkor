@@ -1,8 +1,7 @@
 CC		:= cc
-INCLUDES	:= 
-CFLAGS 	:= -O3 -flto $(INCLUDES)
+CFLAGS 	:= -O3 -flto
 LDFLAGS := $(CFLAGS) \
--lm -lcurl -lpthread
+-lcurl -lpthread -lm
 TARGET  := myapp
 SRCS    := $(wildcard src2/*.c)
 OBJS    := $(patsubst %.c,%.o,$(SRCS))
