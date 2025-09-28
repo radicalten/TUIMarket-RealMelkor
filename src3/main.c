@@ -1,5 +1,5 @@
 #include <stdio.h>
-#include <stdlib.h>
+#include <stdlib.h> 
 #include <stdint.h>
 #include <unistd.h>
 #include <fcntl.h>
@@ -106,6 +106,9 @@ static int load_symbols_from_file(FILE *f) {
     size_t count = 0;
 
     while (fgets(line, sizeof(line), f)) {
+        // Skip empty or whitespace-only lines
+        if (strspn(line, " \t\n\r") == strlen(line)) continue;
+
         size_t len = strnlen(line, sizeof(line));
         if (len == 0) continue;
 
@@ -351,10 +354,12 @@ int main(int argc, char *argv[]) {
     }
 
 	if (load_symbols(symbols_file) != 0) {
+        sleep(2); // Wait so user can see the error message
 		return 1;
 	}
     if (symbols_length == 0) {
-        fprintf(stderr, "No symbols loaded from file. Exiting.\n");
+        fprintf(stderr, "No symbols were loaded from file. Is the file empty?\nExiting.\n");
+        sleep(2); // Wait so user can see the error message
         return 1;
     }
 
@@ -362,6 +367,8 @@ int main(int argc, char *argv[]) {
 
 	if (tb_init() != 0) {
 		fprintf(stderr, "termbox initialization failed: %s\n", strerror(errno));
+        fprintf(stderr, "Ensure you are running this in a standard terminal.\n");
+        sleep(2);
 		return 1;
 	}
 
@@ -369,7 +376,11 @@ int main(int argc, char *argv[]) {
 	int running = 1;
 	pthread_t thread;
 
-	pthread_create(&thread, NULL, update_thread, NULL);
+    if (pthread_create(&thread, NULL, update_thread, NULL) != 0) {
+        tb_shutdown();
+        fprintf(stderr, "Failed to create update thread.\n");
+        return 1;
+    }
 
 	while (running) {
         draw_ui(scroll);
