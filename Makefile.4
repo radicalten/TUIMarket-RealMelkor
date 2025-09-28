@@ -1,0 +1,10 @@
+CC		:= cc
+INCLUDES	:= 
+CFLAGS 	:= -O3 -flto $(INCLUDES)
+LDFLAGS := $(CFLAGS) \
+-lm -lcurl -lpthread
+TARGET  := myapp
+SRCS    := $(wildcard src2/*.c)
+OBJS    := $(patsubst %.c,%.o,$(SRCS))
+all: $(OBJS)
+	$(CC) $(OBJS) $(CFLAGS) $(LDFLAGS) -o $(TARGET) 
