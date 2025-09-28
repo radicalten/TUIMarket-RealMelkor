@@ -91,31 +91,6 @@ char *handle_url(char *url, size_t *len) {
 	return chunk.memory;
 }
 
-static ssize_t get_home(char *buf, size_t length) {
-
-        struct passwd *pw;
-        char *home;
-        int fd;
-
-        home = getenv("HOME");
-        if (home) {
-                fd = open(home, O_DIRECTORY);
-                if (fd > -1) {
-                        close(fd);
-                        return strlcpy(buf, home, length);
-                }
-        }
-
-        pw = getpwuid(geteuid());
-        if (!pw) return -1;
-        fd = open(pw->pw_dir, O_DIRECTORY);
-        if (fd < 0) {
-                close(fd);
-                return -1;
-        }
-        return strlcpy(buf, pw->pw_dir, length);
-}
-
 static int load_symbols() {
     FILE *f = NULL;
     size_t i;
