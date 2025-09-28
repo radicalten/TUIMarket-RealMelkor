@@ -11,6 +11,8 @@
 #include <curl/curl.h>
 #include "termbox2.h" 
 
+#define INTERVAL 30 /* update informations every x seconds */
+#define REFRESH 1000 /* refresh screen every x milliseconds */
 
 #ifndef PATH_MAX
 #define PATH_MAX 1024
