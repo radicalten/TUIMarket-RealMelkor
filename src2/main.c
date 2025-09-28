@@ -9,9 +9,9 @@
 #include <pthread.h>
 #include <errno.h>
 #include <curl/curl.h>
-#include "termbox2.h" // updated to termbox2.h 
-// #include "strnstr.h" REMOVED
-#include "config.h"
+#include "termbox2.h"
+#define INTERVAL 30 /* update stock ticker every x seconds */
+#define REFRESH 1000 /* refresh screen every x milliseconds */
 
 #ifndef PATH_MAX
 #define PATH_MAX 1024
