@@ -1,22 +1,13 @@
-/*
- * Stock ticker terminal UI — single-file edition
- * Requires: termbox2, libcurl, pthread
- *
- * Build (Linux/macOS):
- *   gcc -o ticker ticker.c -lcurl -lpthread
- */
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
 #include <unistd.h>
-#include <fcntl.h>
 #include <string.h>
-#include <pwd.h>
-#include <time.h>
 #include <pthread.h>
 #include <errno.h>
 #include <curl/curl.h>
 #include <sys/select.h>
+#include <stdarg.h>
 #include "termbox2.h"
 
 #define INTERVAL 30   /* update stock ticker every x seconds */
@@ -95,7 +86,6 @@ char *handle_url(char *url, size_t *len) {
     }
 
     *len = chunk.size;
-
     return chunk.memory;
 }
 
@@ -227,12 +217,12 @@ void *update_thread(void *ptr) {
 #define COL_PRICE (COL_VARIATION -(signed)sizeof("| Price") - 3)
 
 /* --- tiny text printing helpers for termbox2 --- */
-void tb_print(int x, int y, uintattr fg, uintattr bg, const char *str) {
+void tb_print(int x, int y, uint32_t fg, uint32_t bg, const char *str) {
     while (*str) {
         tb_set_cell(x++, y, *str++, fg, bg);
     }
 }
-void tb_printf(int x, int y, uintattr fg, uintattr bg, const char *fmt, ...) {
+void tb_printf(int x, int y, uint32_t fg, uint32_t bg, const char *fmt, ...) {
     char buf[256];
     va_list va;
     va_start(va, fmt);
@@ -294,8 +284,6 @@ int display(int *scroll) {
                 (*scroll)++;
             if ((ev.key == TB_KEY_ARROW_UP || ev.ch == 'k') && *scroll)
                 (*scroll)--;
-        } else if (ev.type == TB_EVENT_RESIZE) {
-            // handled by loop naturally
         }
     } else if (evres < 0) {
         return -1;
