@@ -1,0 +1,36 @@
+name: OSX-SDL2-Brew-2-stocktop
+on:
+  push:
+    branches:
+    - master
+jobs:
+  build:
+    runs-on: macos-14
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+    - name: Set up Homebrew
+      id: set-up-homebrew
+      uses: Homebrew/actions/setup-homebrew@master
+    - name: Install stocktop Dependencies
+      run: |
+        brew install json-c
+        brew list json-c
+        # brew list ncurses
+        # brew install json-c ncurses
+        # brew install gtk+3 json-glib glibc curl sqlite3
+        # curl 8.16.0 is already installed and up-to-date.
+        # sqlite 3.50.4 is already installed and up-to-date.
+        # glibc: Linux is required for this software.
+    - name: Compile
+      run: |
+        make -f Makefile.2
+    - name: Create tarball
+      run: |
+        tar -cvf myapp.tgz myapp
+    - name: Upload
+      uses: actions/upload-artifact@v4
+      with:
+        name: Artifact
+        path: |
+          .

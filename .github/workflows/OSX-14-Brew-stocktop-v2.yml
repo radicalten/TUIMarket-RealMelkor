@@ -1,0 +1,31 @@
+name: OSX-SDL2-Brew-2-stocktop-v2
+on:
+  push:
+    branches:
+    - main
+jobs:
+  build:
+    runs-on: macos-14
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+    - name: Set up Homebrew
+      id: set-up-homebrew
+      uses: Homebrew/actions/setup-homebrew@master
+    - name: Install stocktop Dependencies
+      run: |
+        brew install json-c ncurses
+        # brew list json-c
+    - name: Compile
+      run: |
+        make -f Makefile.5
+        # Makefile.2 with src has a segmentation fault src2 tries to fix
+    - name: Create tarball
+      run: |
+        tar -cvf myapp.tgz myapp
+    - name: Upload
+      uses: actions/upload-artifact@v4
+      with:
+        name: Artifact
+        path: |
+          .

@@ -1,0 +1,37 @@
+name: OSX-SDL2-Brew-2-Financials
+on:
+  push:
+    branches:
+    - master
+jobs:
+  build:
+    runs-on: macos-14
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+    - name: Set up Homebrew
+      id: set-up-homebrew
+      uses: Homebrew/actions/setup-homebrew@master
+    - name: Install Financials Dependencies
+      run: |
+        brew install gtk+3 json-glib
+        # brew install gtk+3 json-glib glibc curl sqlite3
+        # curl 8.16.0 is already installed and up-to-date.
+        # sqlite 3.50.4 is already installed and up-to-date.
+        # glibc: Linux is required for this software.
+    - name: Compile
+      run: |
+        cd src
+        make -f Makefile.2
+    - name: Create tarball
+      run: |
+        cd src
+        tar -cvf myapp.tgz myapp
+        # pwd
+        # ls -l
+    - name: Upload
+      uses: actions/upload-artifact@v4
+      with:
+        name: Artifact
+        path: |
+          .
