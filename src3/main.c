@@ -259,19 +259,28 @@ int display(int *scroll) {
 
 	tb_present();
 
-	/* FIX: process input only when an event is available and check event type */
+	/* Non-blocking event drain: wait up to REFRESH for first event,
+	   then drain the rest with zero-timeout. Also clamp scroll. */
+	int visible_rows = (h > 1) ? (h - 1) : 1; /* rows available below header */
+	int max_scroll = (int)symbols_length - visible_rows;
+	if (max_scroll < 0) max_scroll = 0;
+
 	int rc = tb_peek_event(&ev, REFRESH);
-	if (rc > 0) {
+	while (rc > 0) {
 		if (ev.type == TB_EVENT_KEY) {
 			if (ev.key == TB_KEY_ESC || ev.ch == 'q') return -1;
-			if ((ev.key == TB_KEY_ARROW_DOWN || ev.ch == 'j') && !bottom)
-				(*scroll)++;
-			if ((ev.key == TB_KEY_ARROW_UP || ev.ch == 'k') && *scroll)
-				(*scroll)--;
+
+			if (ev.key == TB_KEY_ARROW_DOWN || ev.ch == 'j') {
+				if (*scroll < max_scroll) (*scroll)++;
+			} else if (ev.key == TB_KEY_ARROW_UP || ev.ch == 'k') {
+				if (*scroll > 0) (*scroll)--;
+			}
 		} else if (ev.type == TB_EVENT_RESIZE) {
-			/* next iteration will redraw with new w/h */
+			/* Next iteration will redraw with new dimensions */
 		}
-	} else if (rc < 0) {
+		rc = tb_peek_event(&ev, 0);
+	}
+	if (rc < 0) {
 		/* optional: handle tb_peek_event error */
 	}
 
