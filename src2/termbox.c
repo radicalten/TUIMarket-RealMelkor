@@ -60,7 +60,7 @@ SOFTWARE.
 #include <termios.h>
 #include <unistd.h>
 #include <wchar.h>
-#include "termbox2.h"
+#include "termbox2.h" // updated to termbox2.h
 
 #ifndef IMAXBEL
 #define IMAXBEL 0
