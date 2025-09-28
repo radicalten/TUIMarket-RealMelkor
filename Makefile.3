@@ -1,6 +1,6 @@
 CC		:= cc
 INCLUDES	:= 
-CFLAGS 	:= -O3 -flto $(INCLUDES) -D_POSIX_C_SOURCE=200809L
+CFLAGS 	:= -O3 -flto $(INCLUDES)
 LDFLAGS := $(CFLAGS) \
 -lm -lcurl -lpthread
 TARGET  := myapp
