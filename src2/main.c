@@ -10,7 +10,7 @@
 #include <errno.h>
 #include <curl/curl.h>
 #include "termbox2.h" // updated to termbox2.h 
-#include "strnstr.h"
+// #include "strnstr.h" REMOVED
 #include "config.h"
 
 #ifndef PATH_MAX
