@@ -117,41 +117,38 @@ static ssize_t get_home(char *buf, size_t length) {
 }
 
 static int load_symbols() {
+    FILE *f = NULL;
+    size_t i;
 
-	FILE *f = NULL;
-	size_t i;
+    // Just try each candidate in `paths[]`
+    for (i = 0; i < SIZEOF(paths); i++) {
+        f = fopen(paths[i], "r");
+        if (f) break;
+    }
+    if (!f) return -1;
 
-	// Attempt to open the "symbols" file in the current directory.
-	f = fopen("symbols", "r");
-	
-	// If the file doesn't exist or can't be opened, return an error.
-	if (!f) return -1;
+    for (i = 0; 1; i++) {
+        struct symbol s = {0};
+        size_t len;
 
-	// The rest of the function, which reads the file line by line,
-	// remains exactly the same.
-	for (i = 0; 1; i++) {
+        if (!fgets(s.symbol, sizeof(s.symbol), f)) break;
 
-		struct symbol s = {0};
-		size_t len;
+        len = strnlen(s.symbol, sizeof(s.symbol));
+        if (!len || len > sizeof(s.symbol)) break;
 
-		if (!fgets(s.symbol, sizeof(s.symbol), f)) break;
+        if (s.symbol[len - 1] == '\n') s.symbol[len - 1] = '\0';
 
-		len = strnlen(s.symbol, sizeof(s.symbol));
-		if (!len || len > sizeof(s.symbol)) break;
+        symbols = realloc(symbols, (i + 1) * sizeof(struct symbol));
+        if (!symbols) {
+            printf(alloc_fail);
+            return -1;
+        }
+        symbols[i] = s;
+    }
+    symbols_length = i;
+    fclose(f);
 
-		if (s.symbol[len - 1] == '\n') s.symbol[len - 1] = '\0';
-
-		symbols = realloc(symbols, (i + 1) * sizeof(struct symbol));
-		if (!symbols) {
-			printf(alloc_fail);
-			return -1;
-		}
-		symbols[i] = s;
-	}
-	symbols_length = i;
-	fclose(f);
-
-	return 0;
+    return 0;
 }
 
 const char str_price[] = "\"regularMarketPrice\":";
