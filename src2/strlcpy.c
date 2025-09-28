@@ -26,7 +26,7 @@
  * Returns strlen(src); if retval >= dsize, truncation occurred.
  */
 size_t
-strlcpy(char *dst, const char *src, size_t dsize)
+my_strlcpy(char *dst, const char *src, size_t dsize)
 {
         const char *osrc = src;
         size_t nleft = dsize;
