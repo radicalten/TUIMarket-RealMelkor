@@ -10,7 +10,6 @@
 #include <errno.h>
 #include <curl/curl.h>
 #include "termbox.h" 
-#include "strlcpy.h" 
 #include "strnstr.h"
 #include "config.h"
 
