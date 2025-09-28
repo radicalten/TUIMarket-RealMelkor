@@ -34,6 +34,7 @@ const char query_price[] =
 
 const char *paths[] = {
 	"symbols",
+	"symbols.txt",
 };
 
 struct mem {
