@@ -9,7 +9,7 @@
 #include <pthread.h>
 #include <errno.h>
 #include <curl/curl.h>
-#include "termbox.h" 
+#include "termbox2.h" // updated to termbox2.h 
 #include "strnstr.h"
 #include "config.h"
 
