@@ -33,9 +33,7 @@ const char query_price[] =
 	"https://query2.finance.yahoo.com/v7/finance/options/%s";
 
 const char *paths[] = {
-	".config/tuimarket/symbols",
-	".tuimarket/symbols",
-	".tuimarket_symbols",
+	"./symbols.txt",
 };
 
 struct mem {
