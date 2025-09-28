@@ -9,7 +9,7 @@ LDFLAGS := $(CFLAGS) \
 #-L/opt/homebrew/opt/ncurses/lib \
 #-L/opt/homebrew/lib \
 #-Wl,-rpath,/opt/homebrew/lib \
--lcurl -lpthread -lm
+-lm -lcurl -lpthread
 TARGET  := myapp
 SRCS    := $(wildcard src/*.c)
 OBJS    := $(patsubst %.c,%.o,$(SRCS))
