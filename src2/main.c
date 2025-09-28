@@ -33,7 +33,7 @@ const char query_price[] =
 	"https://query2.finance.yahoo.com/v7/finance/options/%s";
 
 const char *paths[] = {
-	"./symbols.txt"
+	"./symbols",
 };
 
 struct mem {
