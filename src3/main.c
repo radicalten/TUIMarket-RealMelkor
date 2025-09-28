@@ -259,13 +259,22 @@ int display(int *scroll) {
 
 	tb_present();
 
-	if (!tb_peek_event(&ev, REFRESH)) {
-		if (ev.key == TB_KEY_ESC || ev.ch == 'q') return -1;
-		if ((ev.key == TB_KEY_ARROW_DOWN || ev.ch == 'j') && !bottom)
-			(*scroll)++;
-		if ((ev.key == TB_KEY_ARROW_UP || ev.ch == 'k') && *scroll)
-			(*scroll)--;
+	/* FIX: process input only when an event is available and check event type */
+	int rc = tb_peek_event(&ev, REFRESH);
+	if (rc > 0) {
+		if (ev.type == TB_EVENT_KEY) {
+			if (ev.key == TB_KEY_ESC || ev.ch == 'q') return -1;
+			if ((ev.key == TB_KEY_ARROW_DOWN || ev.ch == 'j') && !bottom)
+				(*scroll)++;
+			if ((ev.key == TB_KEY_ARROW_UP || ev.ch == 'k') && *scroll)
+				(*scroll)--;
+		} else if (ev.type == TB_EVENT_RESIZE) {
+			/* next iteration will redraw with new w/h */
+		}
+	} else if (rc < 0) {
+		/* optional: handle tb_peek_event error */
 	}
+
 	return 0;
 }
 
